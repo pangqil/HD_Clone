@@ -8,7 +8,7 @@ AHD_Hero::AHD_Hero()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	//commit test
 }
 
 // Called when the game starts or when spawned
@@ -29,6 +29,6 @@ void AHD_Hero::Tick(float DeltaTime)
 void AHD_Hero::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
+	
 }
 
