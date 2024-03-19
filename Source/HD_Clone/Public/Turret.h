@@ -19,9 +19,9 @@ class HD_CLONE_API ATurret : public AActor
 	
 public:	
 	// Sets default values for this actor's properties
-	 ATurret();
+	ATurret();
 	UPROPERTY(EditDefaultsOnly)
-	USkeletalMeshComponent* TurretSM=nullptr;
+	USkeletalMeshComponent* TurretSM;
 
 	UPROPERTY(EditDefaultsOnly)
 	USphereComponent* SphereComponent=nullptr;
@@ -46,8 +46,6 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "Fire")
 	float FireRate = 1.f;
-
-	
 	
 	UPROPERTY(EditInstanceOnly, Category = "Fire")
 	TSubclassOf<ATurretProjectile> ProjectileActor = nullptr;
@@ -59,10 +57,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
-	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Turret")
-	// USkeletalMesh* DefaultMesh;
-	
+		
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
