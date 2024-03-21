@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -19,54 +17,55 @@ class HD_CLONE_API ATurret : public AActor
 	
 public:	
 	// Sets default values for this actor's properties
-	 ATurret();
-	UPROPERTY(EditDefaultsOnly)
-	USkeletalMeshComponent* TurretSM=nullptr;
+	ATurret();
 
+	
+	UPROPERTY(VisibleAnywhere)
+	USceneComponent* Root;
+	
 	UPROPERTY(EditDefaultsOnly)
-	USphereComponent* SphereComponent=nullptr;
+	USkeletalMeshComponent* TurretMesh;
 	
 	UPROPERTY(EditDefaultsOnly)
 	UArrowComponent* ArrowComponent=nullptr;
-
-	UFUNCTION()
+	
+	UFUNCTION(BlueprintCallable)
 	void FindTarget();
 
 	UPROPERTY(EditInstanceOnly, Category="Turret", meta=(ClampMin="1.0",ClampMax="2000.0",UIMin="1.0",UIMax="2000.0"))
 	float SenseRange=1000.f;
 	
-	UPROPERTY(EditInstanceOnly, Category="Turret")
-	bool EnableSphere=false;
-	
-	UPROPERTY(EditAnywhere, Category = "Turret")
-	USoundBase* RotationSoundCue = nullptr;
-
 	UPROPERTY(EditAnywhere, Category = "Turret")
 	float InterpolationSpeed = 10.f;
 
+	UPROPERTY(EditAnywhere, Category = "Turret")
+	USoundBase* RotationSoundCue = nullptr;
+	
 	UPROPERTY(EditInstanceOnly, Category = "Fire")
 	float FireRate = 1.f;
-
-	
 	
 	UPROPERTY(EditInstanceOnly, Category = "Fire")
 	TSubclassOf<ATurretProjectile> ProjectileActor = nullptr;
 
 	UPROPERTY(EditAnywhere, Category = "Fire")
 	USoundWave* FireSoundEffect = nullptr;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	float FullHealth;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	float HealthPercentage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "State")
+	float PreviousHealth;
 	
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
-	// UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Turret")
-	// USkeletalMesh* DefaultMesh;
-	
+
 public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-private:
+	
+public:
 	bool bIsInDelayTime = false;
 	bool bIsRotating = false;
 	float RandValue = 0.f;
@@ -82,7 +81,7 @@ private:
 	
 	UPROPERTY()
 	AActor* BestTarget = nullptr;
-
+	
 	UPROPERTY()
 	UAudioComponent* RotationAC = nullptr;
 	
@@ -92,15 +91,16 @@ private:
 	FTimerHandle TimerHandle;
 	FTimerHandle FireTimerHandle;
 
+	void DrawDetectionRange();
 	void RotateToTarget();
-
 	void PlayRotateSound();
 	void PlayFireSound();
-
 	void IdleRotate(const float DeltaSecond);
-	//void FireProjectile();
-
+	void FireProjectile();
+	
 	float RotateValue = 0;
 
 	FHitResult SightHitResult;
+private:
+	
 };

@@ -18,44 +18,36 @@
 // Sets default values
 ATurret::ATurret()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	bReplicates=true;
 	PrimaryActorTick.bCanEverTick = true;
-
+	
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> DefaultMesh(TEXT("/Game/Skills/Turrets/Models/SM_Turret1.SM_Turret1"));
 
-	TurretSM = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("TurretMesh"));
-	TurretSM->SetSkeletalMesh(DefaultMesh.Object);
+	TurretMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("TurretMesh"));
+	TurretMesh->SetSkeletalMesh(DefaultMesh.Object);
 	SetRootComponent(RootComponent);
-	TurretSM->SetupAttachment(RootComponent);
-	TurretSM->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
-	SphereComponent = CreateDefaultSubobject<USphereComponent>("BoxCollision");
-	SphereComponent->SetupAttachment(TurretSM);
-
+	
 	RotationAC = CreateDefaultSubobject<UAudioComponent>("RotationAudioComponent");
-	RotationAC->SetupAttachment(TurretSM);
+	RotationAC->SetupAttachment(TurretMesh);
 	RotationAC->bAlwaysPlay = true;
 
 	FireAC = CreateDefaultSubobject<UAudioComponent>("FireAudioComponent");
-	FireAC->SetupAttachment(TurretSM);
+	FireAC->SetupAttachment(TurretMesh);
 	FireAC->bAlwaysPlay = true;
 
 	ArrowComponent = CreateDefaultSubobject<UArrowComponent>("ArrowComponent");
-	ArrowComponent->SetupAttachment(TurretSM);
-	ArrowComponent->SetRelativeLocation({60.f,0.f,130.f});
+	ArrowComponent->SetupAttachment(TurretMesh);
+	ArrowComponent->SetRelativeLocation({0.f,80.f,70.f});
 	
-	ActorsToIgnore.Reserve(3);
+	ActorsToIgnore.Reserve(4);
 	ActorsToIgnore.Add(this);
 
 }
 
 void ATurret::FindTarget()
 {
-	if(EnableSphere)
-	{
-		DrawDebugSphere(GetWorld(), GetActorLocation(), SenseRange, 8, FColor::Blue, false, -1.0f, SDPG_World);		
-	}
-
+	
+	DrawDetectionRange();
 	TArray<AActor*> OverlappingActors;
 
 	const bool IsOverlapped = UKismetSystemLibrary::SphereOverlapActors(GetWorld(), GetActorLocation(),
@@ -69,7 +61,7 @@ void ATurret::FindTarget()
 	{	
 		for (AActor*& HitResult : OverlappingActors)
 		{
-			ActorsToIgnore[2] = HitResult;
+			ActorsToIgnore.Add(HitResult);
 
 			if(!ClosestTarget || GetDistanceTo(HitResult) < BestDistance)
 			{
@@ -89,18 +81,31 @@ void ATurret::FindTarget()
 	}
 }
 
+void ATurret::DrawDetectionRange()
+{
+	if (GetWorld())
+	{
+		UE_LOG(LogTemp, Warning,TEXT("test"));
+		DrawDebugSphere(GetWorld(), GetActorLocation(), SenseRange, 32, FColor::Red, false, -1.0f, SDPG_World);
+	}
+}
+
 // Called when the game starts or when spawned
 void ATurret::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// FullHealth=100.0f;
+	// HealthPercentage=1.0f;
+	//
+	
 	TraceObjectTypes.Add(UEngineTypes::ConvertToObjectType(ECollisionChannel::ECC_Pawn));
 
 	if(RotationSoundCue)
 	{
-		RotationAC->SetSound(RotationSoundCue);		
+		RotationAC->SetSound(RotationSoundCue);
 	}
-
+	
 	if(FireSoundEffect)
 	{
 		FireAC->SetSound(FireSoundEffect);
@@ -115,11 +120,13 @@ void ATurret::BeginPlay()
 void ATurret::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	FindTarget();
 	if(BestTarget)
 	{
 		RotateToTarget();
-
-		//FireProjectile();
+		
+		FireProjectile();
 	}
 	else
 	{
@@ -132,10 +139,10 @@ void ATurret::Tick(float DeltaTime)
 }
 void ATurret::RotateToTarget()
 {
-	if(BestTarget && TurretSM)
+	if(BestTarget && TurretMesh)
 	{
-		const FRotator DesiredRotation = UKismetMathLibrary::FindLookAtRotation(TurretSM->GetRelativeLocation(),BestTarget->GetActorLocation());
-		TurretSM->SetRelativeRotation({TurretSM->GetRelativeRotation().Pitch, DesiredRotation.Yaw, TurretSM->GetRelativeRotation().Roll});
+		const FRotator DesiredRotation = UKismetMathLibrary::FindLookAtRotation(TurretMesh->GetRelativeLocation(),BestTarget->GetActorLocation());
+		TurretMesh->SetRelativeRotation({TurretMesh->GetRelativeRotation().Pitch, DesiredRotation.Yaw, TurretMesh->GetRelativeRotation().Roll});
 	}
 }
 
@@ -169,11 +176,11 @@ void ATurret::IdleRotate(const float DeltaSecond)
 
 	if(bIsRotating && !bIsInDelayTime)
 	{
-		RotateValue = FMath::FInterpTo(TurretSM->GetRelativeRotation().Yaw, RandValue, DeltaSecond, InterpolationSpeed);
-		TurretSM->SetRelativeRotation({TurretSM->GetRelativeRotation().Pitch, RotateValue, TurretSM->GetRelativeRotation().Roll});
+		RotateValue = FMath::FInterpTo(TurretMesh->GetRelativeRotation().Yaw, RandValue, DeltaSecond, InterpolationSpeed);
+		TurretMesh->SetRelativeRotation({TurretMesh->GetRelativeRotation().Pitch, RotateValue, TurretMesh->GetRelativeRotation().Roll});
 	}
 
-	if(FMath::IsNearlyEqual(RandValue, TurretSM->GetRelativeRotation().Yaw, 1.f) && !bIsInDelayTime)
+	if(FMath::IsNearlyEqual(RandValue, TurretMesh->GetRelativeRotation().Yaw, 1.f) && !bIsInDelayTime)
 	{
 		bIsInDelayTime = true;
 		
@@ -187,20 +194,11 @@ void ATurret::IdleRotate(const float DeltaSecond)
 			},1.f,false,FMath::RandRange(1.1f, 1.6f));
 		}
 	}
-}
-/*
+}//gpt
+
 void ATurret::FireProjectile()
 {
-	if(!GetWorld()->GetTimerManager().IsTimerActive(FireTimerHandle))
-	{
-		GetWorld()->GetTimerManager().SetTimer(FireTimerHandle,[=]()
-		{
-			ATurretProjectile* TurretProjectile = GetWorld()->SpawnActor<ATurretProjectile>(ProjectileActor.Get(),
-			ArrowComponent->GetComponentLocation(), {0,TurretSM->GetRelativeRotation().Yaw, 0});
-
-			PlayFireSound();
-			
-		},1.f, false, FireRate);
-	}
+	ATurretProjectile* TurretProjectile = GetWorld()->SpawnActor<ATurretProjectile>(ProjectileActor.Get(),
+	ArrowComponent->GetComponentLocation(), {0,TurretMesh->GetRelativeRotation().Yaw, 0});
+	PlayFireSound();
 }
-*/
